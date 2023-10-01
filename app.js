@@ -3,6 +3,8 @@ import prisma from "./src/utils/prisma.js";
 import morgan from "morgan";
 import cors from "cors"; // Import the cors middleware
 import { Prisma } from "@prisma/client";
+import fs from "fs";
+import multer from "multer";
 import OpenAI from "openai";
 
 const app = express();
@@ -15,6 +17,19 @@ app.use(express.json()); // Add this middleware to parse JSON in request bodies
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
+
+// this is the new multer stuff for upload images
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "public");
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + "" + file.originalname);
+  },
+});
+const upload = multer({ storage: storage }).single("file");
+let filePath;
+// ends here
 
 // endpoint for text generation
 app.post("/get-answer", async (req, res) => {
@@ -62,6 +77,53 @@ app.post("/get-art", async (req, res) => {
       text: "https://images.dog.ceo/breeds/ridgeback-rhodesian/n02087394_1722.jpg",
     });
   }
+});
+
+//endpoint for image variation - ORIGINAL ENDPOINT USING AWS AND PRISMA
+app.post("/generate-variation", async (req, res) => {
+  try {
+    // const uploadedImage = await prisma.image.create({
+    //   data: {
+    //     ...data,
+    //   },
+    // });
+
+    // // Create a buffer from the base64 image data
+    // const imageBuffer = Buffer.from(data.name, "base64");
+    // console.log(imageBuffer);
+
+    // // Save the buffer to a file with the same name as the uploaded image
+    // const filePath = `./${data.name}`; // Assuming data.name contains the desired file name
+    // fs.writeFileSync(filePath, imageBuffer);
+    // console.log(filePath);
+
+    const imageVariation = await openai.images.createVariation({
+      image: fs.createReadStream(filePath),
+      n: 1,
+      size: "1024x1024",
+    });
+    const generatedVariation = imageVariation.data;
+    return res.status(200).json({ text: generatedVariation });
+  } catch (error) {
+    console.error("Error retrieving details:", error);
+    res.status(403).json({
+      text: "https://images.dog.ceo/breeds/ridgeback-rhodesian/n02087394_1722.jpg",
+    });
+  }
+});
+
+//endpoint for upload image - ENDPOINT USING MULTER to make a new file
+// i made a public directory
+app.post("/upload", async (req, res) => {
+  upload(req, res, (err) => {
+    if (err instanceof multer.MulterError) {
+      return res.status(500).json(err);
+    } else if (err) {
+      return res.status(500).json(err);
+    }
+    console.log(req.file);
+    filePath = req.file.path;
+  });
 });
 
 export default app;

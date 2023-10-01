@@ -1,0 +1,14 @@
+{
+  "sqltools.connections": [
+    {
+      "previewLimit": 50,
+      "server": "localhost",
+      "port": 5443,
+      "driver": "PostgreSQL",
+      "name": "chatGPT",
+      "database": "chatGPT-DB",
+      "username": "chatGPT",
+      "password": "chatGPT"
+    }
+  ]
+}
