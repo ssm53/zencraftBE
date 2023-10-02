@@ -18,10 +18,10 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// this is the new multer stuff for upload images
+// this is the new multer stuff for image variation
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "public");
+    cb(null, "public-variarion");
   },
   filename: (req, file, cb) => {
     cb(null, Date.now() + "" + file.originalname);
@@ -29,6 +29,34 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage }).single("file");
 let filePath;
+// ends here
+
+// this is the multer stuff for ori image edit
+const editOriStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "public-edit");
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + "" + file.originalname);
+  },
+});
+
+const editOriUpload = multer({ storage: editOriStorage }).single("file");
+let OriFilePath;
+//ends here
+
+// multer stuff for mask image edit
+const editMaskStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "public-mask");
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + "" + file.originalname);
+  },
+});
+
+const editMaskUpload = multer({ storage: editMaskStorage }).single("file");
+let MaskFilePath;
 // ends here
 
 // endpoint for text generation
@@ -82,21 +110,6 @@ app.post("/get-art", async (req, res) => {
 //endpoint for image variation - ORIGINAL ENDPOINT USING AWS AND PRISMA
 app.post("/generate-variation", async (req, res) => {
   try {
-    // const uploadedImage = await prisma.image.create({
-    //   data: {
-    //     ...data,
-    //   },
-    // });
-
-    // // Create a buffer from the base64 image data
-    // const imageBuffer = Buffer.from(data.name, "base64");
-    // console.log(imageBuffer);
-
-    // // Save the buffer to a file with the same name as the uploaded image
-    // const filePath = `./${data.name}`; // Assuming data.name contains the desired file name
-    // fs.writeFileSync(filePath, imageBuffer);
-    // console.log(filePath);
-
     const imageVariation = await openai.images.createVariation({
       image: fs.createReadStream(filePath),
       n: 1,
@@ -121,9 +134,48 @@ app.post("/upload", async (req, res) => {
     } else if (err) {
       return res.status(500).json(err);
     }
-    console.log(req.file);
     filePath = req.file.path;
   });
+});
+
+app.post("/upload-original", async (req, res) => {
+  editOriUpload(req, res, (err) => {
+    if (err instanceof multer.MulterError) {
+      return res.status(500).json(err);
+    } else if (err) {
+      return res.status(500).json(err);
+    }
+    OriFilePath = req.file.path;
+  });
+});
+
+app.post("/upload-mask", async (req, res) => {
+  editMaskUpload(req, res, (err) => {
+    if (err instanceof multer.MulterError) {
+      return res.status(500).json(err);
+    } else if (err) {
+      return res.status(500).json(err);
+    }
+    MaskFilePath = req.file.path;
+  });
+});
+
+//endpoint for image variation - ORIGINAL ENDPOINT USING AWS AND PRISMA
+app.post("/generate-edit", async (req, res) => {
+  try {
+    const imageEdit = await openai.images.edit({
+      image: fs.createReadStream(OriFilePath),
+      mask: fs.createReadStream(MaskFilePath),
+      prompt: req.body.prompt,
+    });
+    const generatedEdit = imageEdit.data;
+    return res.status(200).json({ text: generatedEdit });
+  } catch (error) {
+    console.error("Error retrieving details:", error);
+    res.status(403).json({
+      text: "https://images.dog.ceo/breeds/ridgeback-rhodesian/n02087394_1722.jpg",
+    });
+  }
 });
 
 export default app;
