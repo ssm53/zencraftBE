@@ -6,11 +6,15 @@ import { Prisma } from "@prisma/client";
 import fs from "fs";
 import multer from "multer";
 import OpenAI from "openai";
+import signUpRouter from "./src/controllers/signUp.controllers.js";
+import authRouter from "./src/controllers/auth.controllers.js";
 
 const app = express();
 app.use(morgan("combined"));
 app.use(cors()); // Use the cors middleware to allow cross-origin requests
 app.use(express.json()); // Add this middleware to parse JSON in request bodies
+app.use("/sign-up", signUpRouter);
+app.use("/auth", authRouter);
 
 // OPEN AI SECTION
 // normal set up shit
