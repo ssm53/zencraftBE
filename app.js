@@ -276,4 +276,44 @@ app.get("/my-edit-images/:userId", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
+// endpoint to increment noofpromts field by 1
+app.post("/inc-no-of-prompts/:userId", async (req, res) => {
+  const userId = parseInt(req.params.userId); // Parse userId from the URL parameter
+
+  try {
+    // Use Prisma to increment the no_of_prompts field for the specified user
+    const incPrompts = await prisma.user.update({
+      where: { id: userId },
+      data: { no_of_prompts: { increment: 1 } },
+    });
+
+    // Return the images as JSON response
+    return res.json({ incPrompts, userId });
+  } catch (error) {
+    // Handle errors and return an error response if needed
+    console.error("Error increasing prompts:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// endpoint to get number of prompts to be used to calculate prompts remaining in header
+app.get("/no-of-prompts/:userId", async (req, res) => {
+  const userId = parseInt(req.params.userId); // Parse userId from the URL parameter
+
+  try {
+    // Use Prisma to find the no_of_prompts for the specified user
+    const number = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { no_of_prompts: true }, // Select only the no_of_prompts field
+    });
+
+    // Return the images as JSON response
+    return res.json({ promptNumber: number.no_of_prompts });
+  } catch (error) {
+    // Handle errors and return an error response if needed
+    console.error("Error retrieving no of prompts:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 export default app;
