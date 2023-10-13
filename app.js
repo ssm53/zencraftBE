@@ -6,6 +6,7 @@ import { Prisma } from "@prisma/client";
 import fs from "fs";
 import multer from "multer";
 import OpenAI from "openai";
+import auth from "./src/middlewares/auth.js";
 import signUpRouter from "./src/controllers/signUp.controllers.js";
 import authRouter from "./src/controllers/auth.controllers.js";
 
@@ -25,7 +26,7 @@ const openai = new OpenAI({
 // this is the new multer stuff for image variation
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "public-variarion");
+    cb(null, "public-variation");
   },
   filename: (req, file, cb) => {
     cb(null, Date.now() + "" + file.originalname);
@@ -89,17 +90,28 @@ app.post("/get-answer", async (req, res) => {
 });
 
 //endpoint for image generation
-app.post("/get-art", async (req, res) => {
+app.post("/get-art", auth, async (req, res) => {
+  const data = req.body;
+  console.log(data);
   try {
     if (typeof req.body.prompt === "string") {
       // const imageCompletion = await openai.Image.create(
       const imageCompletion = await openai.images.generate({
         prompt: req.body.prompt,
         n: 1,
-        size: "1024x1024",
+        size: req.body.size,
       });
 
       const generatedImage = imageCompletion.data;
+
+      const createGenImage = await prisma.genImage.create({
+        data: {
+          userId: req.body.userId,
+          prompt: req.body.prompt,
+          size: req.body.size,
+          url: generatedImage[0].url,
+        },
+      });
       res.status(200).json({ text: generatedImage });
     }
   } catch (error) {
@@ -112,14 +124,25 @@ app.post("/get-art", async (req, res) => {
 });
 
 //endpoint for image variation - ORIGINAL ENDPOINT USING AWS AND PRISMA
-app.post("/generate-variation", async (req, res) => {
+app.post("/generate-variation/:userId", auth, async (req, res) => {
+  const userId = parseInt(req.params.userId); // Parse userId from the URL parameter
   try {
     const imageVariation = await openai.images.createVariation({
       image: fs.createReadStream(filePath),
-      n: 1,
-      size: "1024x1024",
+      n: 2,
+      size: "512x512",
     });
     const generatedVariation = imageVariation.data;
+
+    for (let i = 0; i < generatedVariation.length; i++) {
+      const createVarImage = await prisma.varImage.create({
+        data: {
+          userId: userId,
+          size: "512x512",
+          url: generatedVariation[i].url,
+        },
+      });
+    }
     return res.status(200).json({ text: generatedVariation });
   } catch (error) {
     console.error("Error retrieving details:", error);
@@ -165,7 +188,7 @@ app.post("/upload-mask", async (req, res) => {
 });
 
 //endpoint for image variation - ORIGINAL ENDPOINT USING AWS AND PRISMA
-app.post("/generate-edit", async (req, res) => {
+app.post("/generate-edit", auth, async (req, res) => {
   try {
     const imageEdit = await openai.images.edit({
       image: fs.createReadStream(OriFilePath),
@@ -173,6 +196,15 @@ app.post("/generate-edit", async (req, res) => {
       prompt: req.body.prompt,
     });
     const generatedEdit = imageEdit.data;
+
+    const createEditImage = await prisma.editImage.create({
+      data: {
+        userId: req.body.userId,
+        prompt: req.body.prompt,
+        size: "512x512",
+        url: generatedEdit[0].url,
+      },
+    });
     return res.status(200).json({ text: generatedEdit });
   } catch (error) {
     console.error("Error retrieving details:", error);

@@ -15,10 +15,35 @@ model User {
   name     String?
   email    String  @unique
   password String?
+  genimages GenImage[]
+  varimages VarImage[]
+  editimages EditImage[]
 }
 
-model Image {
+model GenImage {
   id          Int     @id @default(autoincrement())  
-  name        String?     
+  user        User    @relation(fields: [userId], references: [id])
+  userId      Int 
+  prompt      String? 
+  size        String?   
   url         String? @unique
 }
+
+model VarImage {
+  id          Int     @id @default(autoincrement())  
+  user        User    @relation(fields: [userId], references: [id])
+  userId      Int  
+  size        String?   
+  url         String? @unique
+}
+
+model EditImage {
+  id          Int     @id @default(autoincrement())  
+  user        User    @relation(fields: [userId], references: [id])
+  userId      Int 
+  prompt      String? 
+  size        String?   
+  url         String? @unique
+}
+
+
