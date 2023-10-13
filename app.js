@@ -214,4 +214,66 @@ app.post("/generate-edit", auth, async (req, res) => {
   }
 });
 
+// endpoint to get my generated images to display in my-libarry page
+app.get("/my-gen-images/:userId", async (req, res) => {
+  const userId = parseInt(req.params.userId); // Parse userId from the URL parameter
+
+  try {
+    // Use Prisma to find images owned by the specified user
+    const myGenImages = await prisma.genImage.findMany({
+      where: {
+        userId: userId,
+      },
+    });
+
+    // Return the images as JSON response
+    return res.json({ myGenImages, userId }); // added user: for redirect.. place change to userid if needed
+  } catch (error) {
+    // Handle errors and return an error response if needed
+    console.error("Error retrieving images:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// endpoint to get my variation images to display in my-libarry page
+app.get("/my-var-images/:userId", async (req, res) => {
+  const userId = parseInt(req.params.userId); // Parse userId from the URL parameter
+
+  try {
+    // Use Prisma to find images owned by the specified user
+    const myVarImages = await prisma.varImage.findMany({
+      where: {
+        userId: userId,
+      },
+    });
+
+    // Return the images as JSON response
+    return res.json({ myVarImages, userId }); // added user: for redirect.. place change to userid if needed
+  } catch (error) {
+    // Handle errors and return an error response if needed
+    console.error("Error retrieving images:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// endpoint to get my edit images to display in my-libarry page
+app.get("/my-edit-images/:userId", async (req, res) => {
+  const userId = parseInt(req.params.userId); // Parse userId from the URL parameter
+
+  try {
+    // Use Prisma to find images owned by the specified user
+    const myEditImages = await prisma.editImage.findMany({
+      where: {
+        userId: userId,
+      },
+    });
+
+    // Return the images as JSON response
+    return res.json({ myEditImages, userId }); // added user: for redirect.. place change to userid if needed
+  } catch (error) {
+    // Handle errors and return an error response if needed
+    console.error("Error retrieving images:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 export default app;
