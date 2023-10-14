@@ -9,6 +9,7 @@ import OpenAI from "openai";
 import auth from "./src/middlewares/auth.js";
 import signUpRouter from "./src/controllers/signUp.controllers.js";
 import authRouter from "./src/controllers/auth.controllers.js";
+import stripeRouter from "./src/controllers/stripe.controllers.js";
 
 const app = express();
 app.use(morgan("combined"));
@@ -16,6 +17,7 @@ app.use(cors()); // Use the cors middleware to allow cross-origin requests
 app.use(express.json()); // Add this middleware to parse JSON in request bodies
 app.use("/sign-up", signUpRouter);
 app.use("/auth", authRouter);
+app.use("/create-checkout-session", stripeRouter);
 
 // OPEN AI SECTION
 // normal set up shit
@@ -285,7 +287,10 @@ app.post("/inc-no-of-prompts/:userId", async (req, res) => {
     // Use Prisma to increment the no_of_prompts field for the specified user
     const incPrompts = await prisma.user.update({
       where: { id: userId },
-      data: { no_of_prompts: { increment: 1 } },
+      data: {
+        no_of_prompts: { increment: 1 },
+        prompts_remaining: { decrement: 1 },
+      },
     });
 
     // Return the images as JSON response
@@ -313,6 +318,48 @@ app.get("/no-of-prompts/:userId", async (req, res) => {
   } catch (error) {
     // Handle errors and return an error response if needed
     console.error("Error retrieving no of prompts:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// endpoint to get number of prompts remaining to see if api call can be done by user or not
+app.get("/prompts-remaining/:userId", async (req, res) => {
+  const userId = parseInt(req.params.userId); // Parse userId from the URL parameter
+
+  try {
+    // Use Prisma to find the no_of_prompts remaining by user
+    const number2 = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { prompts_remaining: true },
+    });
+
+    // Return the images as JSON response
+    return res.json({ promptsRemaining: number2.prompts_remaining });
+  } catch (error) {
+    // Handle errors and return an error response if needed
+    console.error("Error retrieving no of prompts remaining:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// endpoint to increment noofpromts field by 1
+app.post("/inc-prompts-remaining/:userId", async (req, res) => {
+  const userId = parseInt(req.params.userId); // Parse userId from the URL parameter
+
+  try {
+    // Use Prisma to increment the prompts remaining for this user by 50
+    const incPromptsRemaining = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        prompts_remaining: { increment: 50 },
+      },
+    });
+
+    // Return the images as JSON response
+    return res.json({ incPromptsRemaining, userId });
+  } catch (error) {
+    // Handle errors and return an error response if needed
+    console.error("Error increasing prompts remaining:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });

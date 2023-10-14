@@ -16,6 +16,7 @@ model User {
   email    String  @unique
   password String?
   no_of_prompts Int @default(0)
+  prompts_remaining Int @default(5)
   genimages GenImage[]
   varimages VarImage[]
   editimages EditImage[]
