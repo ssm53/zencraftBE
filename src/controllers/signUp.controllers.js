@@ -4,7 +4,7 @@ import { Prisma } from "@prisma/client";
 import prisma from "../utils/prisma.js";
 import { validateUser } from "../validators/signUp.js";
 import { filter } from "../utils/common.js";
-// import sgMail from "@sendgrid/mail"; // SENDGRID - REACTIVATE
+import sgMail from "@sendgrid/mail"; // SENDGRID - REACTIVATE
 const router = express.Router();
 
 router.post("/", async (req, res) => {
@@ -23,26 +23,26 @@ router.post("/", async (req, res) => {
       data,
     })
     .then((user) => {
-      // // send grid code
-      // sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+      // send grid code
+      sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-      // const msg = {
-      //   to: user.email, // Change to your recipient
-      //   from: "shaunshanil95@gmail.com", // Change to your verified sender
-      //   subject: "Sign up success!",
-      //   text: `Hello, Your sign-up is successful`,
-      //   html: "<p>Hello,</p><p>Your sign-up is successful</p>",
-      // };
+      const msg = {
+        to: user.email, // Change to your recipient
+        from: "shaunshanil95@gmail.com", // Change to your verified sender
+        subject: "Sign up success!",
+        text: `Hello, Your sign-up is successful`,
+        html: "<p>Hello,</p><p>Your sign-up is successful</p>",
+      };
 
-      // sgMail
-      //   .send(msg)
-      //   .then((response) => {
-      //     // console.log(response[0].statusCode);
-      //     // console.log(response[0].headers);
-      //   })
-      //   .catch((error) => {
-      //     // console.error(error);
-      //   });
+      sgMail
+        .send(msg)
+        .then((response) => {
+          // console.log(response[0].statusCode);
+          // console.log(response[0].headers);
+        })
+        .catch((error) => {
+          // console.error(error);
+        });
       return res.json(filter(user, "id", "name", "email"));
     })
     .catch((err) => {
