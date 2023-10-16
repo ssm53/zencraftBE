@@ -201,6 +201,7 @@ app.post("/generate-edit", auth, async (req, res) => {
     const imageEdit = await openai.images.edit({
       image: fs.createReadStream(OriFilePath),
       mask: fs.createReadStream(MaskFilePath),
+      size: "512x512",
       prompt: req.body.prompt,
     });
     const generatedEdit = imageEdit.data;

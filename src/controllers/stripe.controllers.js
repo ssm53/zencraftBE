@@ -41,9 +41,9 @@ router.post("/", async (req, res) => {
   // new one
   // Return an appropriate status code and the session URL
   if (session.id) {
-    return res.status(200).json({ url: session.url, status: "success" });
+    return res.json({ url: session.url, status: "success" });
   } else {
-    return res.status(400).json({ url: session.url, status: "failure" });
+    return res.json({ url: session.url, status: "failure" });
   }
   //new one ends here
 });
