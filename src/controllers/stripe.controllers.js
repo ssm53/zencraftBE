@@ -18,34 +18,44 @@ router.post("/", async (req, res) => {
     },
   });
 
-  const unitAmount = 10 * 100; // Assuming the price is in dollars
-  const session = await stripe.checkout.sessions.create({
-    line_items: [
-      {
-        price_data: {
-          currency: "usd",
-          product_data: {
-            name: "Basic package",
-            description: "You get a total of 50 prompts",
+  // doing try and catch )maybe no need)
+
+  try {
+    const unitAmount = 10 * 100; // Assuming the price is in dollars
+    const session = await stripe.checkout.sessions.create({
+      line_items: [
+        {
+          price_data: {
+            currency: "usd",
+            product_data: {
+              name: "Basic package",
+              description: "You get a total of 50 prompts",
+            },
+            unit_amount: unitAmount,
           },
-          unit_amount: unitAmount,
+          quantity: 1,
         },
-        quantity: 1,
-      },
-    ],
-    mode: "payment",
-    success_url: "http://localhost:5173/",
-    cancel_url: `http://localhost:5173/failure`,
-  });
-  // return res.json(session.url);
-  // new one
-  // Return an appropriate status code and the session URL
-  if (session.id) {
+      ],
+      mode: "payment",
+      success_url: "https://zencraft.pages.dev/",
+      cancel_url: `https://zencraft.pages.dev/failure`,
+    });
     return res.json({ url: session.url, status: "success" });
-  } else {
-    return res.json({ url: session.url, status: "failure" });
+  } catch (error) {
+    // Handle errors and return an error response if needed
+    console.error("Error with payment:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
-  //new one ends here
+
+  // // return res.json(session.url);
+  // // new one
+  // // Return an appropriate status code and the session URL
+  // if (session.id) {
+  //   return res.json({ url: session.url, status: "success" });
+  // } else {
+  //   return res.json({ url: session.url, status: "failure" });
+  // }
+  // //new one ends here
 });
 
 export default router;
